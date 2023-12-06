@@ -1,0 +1,675 @@
+---
+title: "Project Part 2"
+output: github_document
+---
+
+```{r}
+library(Seurat)
+library(SeuratObject)
+library(dplyr)
+library(patchwork)
+library(irlba)
+library(BiocManager)
+library(multtest)
+library(metap)
+library(presto)
+library(ggplot2)
+library(SingleR)
+library(celldex)
+library(scRNAseq)
+library(scuttle)
+library(ExperimentHub)
+library(ggplot2)
+library(ggpubr)
+```
+
+## Alzheimers1 FindAllMarkers Analysis
+
+```{r, fig.width=10, fig.height=10}
+#Load Data FOR ALZHEIMER 1
+alzheimers1 <- readRDS("alzheimers1.1.rds")
+str(alzheimers1)
+View(alzheimers1@meta.data)
+
+
+#Visualize data
+alzheimers1.clusters <- DimPlot(alzheimers1, reduction = "umap", group.by = "seurat_clusters", label= T)
+alzheimers1.clusters
+
+#Findall Markers 
+alzheimers1.clusters.all <- FindAllMarkers(alzheimers1, only.pos = TRUE)
+
+#MBP, CTNNA3 = Myelin Basic Protein, Catenin Alpha 3	
+cluster0.markers <- FindMarkers(alzheimers1, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster0.markers.top <- cluster0.markers  %>% 
+  top_n(2, power)
+
+#LRMDA, PLXDC2 = Leucine Rich Melanocyte Differentiation Associated, #Plexin Domain Containing 2	 
+cluster1.markers <- FindMarkers(alzheimers1, ident.1 = 1, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster1.markers.top <- cluster1.markers  %>% 
+  top_n(2, power)
+
+
+#ADGRV1, CTNNA2 = Adhesion G Protein-Coupled Receptor V1, Catenin Alpha 2	
+cluster2.markers <- FindMarkers(alzheimers1, ident.1 = 2, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster2.markers.top <- cluster2.markers  %>% 
+  top_n(2, power)
+
+
+#MT-CO1, SYT1 = Mitochondrially Encoded Cytochrome C Oxidase I, Synaptotagmin 1	
+cluster3.markers <- FindMarkers(alzheimers1, ident.1 = 3, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster3.markers.top <- cluster3.markers  %>% 
+  top_n(2, power)
+
+
+#FP236383.1, FP671120.1 = nothing just put number 
+cluster4.markers <- FindMarkers(alzheimers1, ident.1 = 4, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster4.markers.top <- cluster4.markers  %>% 
+  arrange( desc(power))
+
+
+#GRIP1, CNTNAP2, = Glutamate Receptor Interacting Protein 1, Contactin Associated Protein 2	
+cluster5.markers <- FindMarkers(alzheimers1, ident.1 = 5, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster5.markers.top <- cluster5.markers  %>% 
+  top_n(2, power)
+
+#TNR, DSCAM = Tenascin R, DS Cell Adhesion Molecule	
+cluster6.markers <- FindMarkers(alzheimers1, ident.1 = 6, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster6.markers.top <- cluster6.markers  %>% 
+  top_n(2, power)
+
+
+#FLT1, EPAS1 = Fms Related Receptor Tyrosine Kinase 1, Endothelial PAS Domain Protein 1	
+cluster7.markers <- FindMarkers(alzheimers1, ident.1 = 7, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster7.markers.top <- cluster7.markers  %>% 
+  top_n(2, power)
+
+
+#CNTN5, AGBL4 = Contactin 5, AGBL Carboxypeptidase 4
+cluster8.markers <- FindMarkers(alzheimers1, ident.1 = 8, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster8.markers.top <- cluster8.markers  %>% 
+  top_n(2, power)
+
+
+#GFAP, DPP10 = Glial Fibrillary Acidic Protein, Dipeptidyl Peptidase Like 10	
+cluster9.markers <- FindMarkers(alzheimers1, ident.1 = 9, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster9.markers.top <- cluster9.markers  %>% 
+  top_n(2, power)
+
+#RALYL, RBFOX1 = RALY RNA Binding Protein Like, RNA Binding Fox-1 Homolog 1	
+cluster10.markers <- FindMarkers(alzheimers1, ident.1 = 10, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster10.markers.top <- cluster10.markers  %>% 
+  top_n(2, power)
+
+#MIS18BP1, TBXAS1 = MIS18 Binding Protein 1	, Thromboxane A Synthase 1
+cluster11.markers <- FindMarkers(alzheimers1, ident.1 = 11, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster11.markers.top <- cluster11.markers  %>% 
+  top_n(2, power)
+
+#PTPRC, RNF213 = Protein Tyrosine Phosphatase Receptor Type C, Ring Finger Protein 213	
+cluster12.markers <- FindMarkers(alzheimers1, ident.1 = 12, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster12.markers.top <- cluster12.markers  %>% 
+  top_n(2, power)
+
+alzheimers1.fp <- FeaturePlot(alzheimers1, features = c("MBP", "LRMDA", "ADGRV1", "MT-CO1",  "FP236383.1", "GRIP1", "TNR", "FLT1", "CNTN5", "GFAP",  "RALYL", "MIS18BP1", "PTPRC" ))
+alzheimers1.fp
+
+ggsave( filename = "/Users/imanmir/CPSC 545 Project/output/alzheimers1.1_featureplot.jpg", height = 7, width = 12, plot = alzheimers1.fp, quality = 50)
+```
+
+```{r, fig.width=10, fig.height=10}
+#Alzheimers1 Continued
+#HeatMap
+alzheimers1.top <- alzheimers1.clusters.all %>%
+    group_by(cluster) %>%
+    dplyr::filter(avg_log2FC > 1) %>%
+    slice_head(n = 10) %>%
+    ungroup() -> top10
+alzheimers1.top <- DoHeatmap(alzheimers1, features = top10$gene) + NoLegend()
+
+
+#NewClusterIDs
+al1.new.cluster.ids <- c(
+    "Myelin Basic Protein",
+    "Leucine Rich Melanocyte", 
+    "Adhesion G Protein-Coupled Receptor", 
+    "Cytochrome C Oxidase I", 
+    "FP236383.1	",
+    " Glutamate Receptor Interacting Protein 1",
+    "Tenascin R",
+    "Fms Related Receptor Tyrosine Kinase 1", 
+    "Contactin 5",
+    "Glial Fibrillary Acidic Protein",
+    "RALY RNA Binding Protein", 
+    "MIS18 Binding Protein 1",  
+    "Protein Tyrosine Phosphatase Receptor"
+)
+                     
+names(al1.new.cluster.ids) <- levels(alzheimers1)
+alzheimers1.new <- RenameIdents(alzheimers1, al1.new.cluster.ids)
+
+
+alzheimers1.plot <- DimPlot(alzheimers1.new, reduction = "umap", label = TRUE, label.size = 4.5) + xlab("UMAP 1") + ylab("UMAP 2") +
+    theme(axis.title = element_text(size = 18), legend.text = element_text(size = 18)) + guides(colour = guide_legend(override.aes = list(size = 10)))
+alzheimers1.plot
+
+ggsave( filename = "/Users/imanmir/CPSC 545 Project/output/alzheimers1.1_umap.jpg", height = 7, width = 12, plot = alzheimers1.plot, quality = 50)
+
+saveRDS(alzheimers1.new, file = "output/alzheimers1.1new.rds")
+```
+
+
+## Alzheimers2
+
+```{r, fig.width=10, fig.height=10}
+#Load Data FOR ALZHEIMER 2
+alzheimers2 <- readRDS("alzheimers2.1.rds")
+str(alzheimers2)
+View(alzheimers2@meta.data)
+
+
+#Visualize data
+alzheimers2.clusters.plot <- DimPlot(alzheimers2, reduction = "umap", group.by = "seurat_clusters", label= T)
+print(alzheimers2.clusters.plot)
+
+alzheimers2.clusters.all <- FindAllMarkers(alzheimers2, only.pos = TRUE)
+
+
+#Findall Markers 
+
+#GPC5, GPM6A = Glypican 5, Glycoprotein M6A	
+cluster0.markers <- FindMarkers(alzheimers2, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster0.markers.top <- cluster0.markers  %>% 
+  top_n(2, power)
+
+
+#IQCJ-SCHIP1, SYN3 = just name, Synapsin III	
+cluster1.markers <- FindMarkers(alzheimers2, ident.1 = 1, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster1.markers.top <- cluster1.markers  %>% 
+  top_n(2, power)
+
+
+#LHFPL3, DSCAM = LHFPL Tetraspan Subfamily Member 3, DS Cell Adhesion Molecule	
+cluster2.markers <- FindMarkers(alzheimers2, ident.1 = 2, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster2.markers.top <- cluster2.markers  %>% 
+  top_n(2, power)
+
+
+#MT-ND4 , MT-CO3 = Mitochondrially Encoded NADH, Mitochondrially Encoded Cytochrome C Oxidase III
+cluster3.markers <- FindMarkers(alzheimers2, ident.1 = 3, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster3.markers.top <- cluster3.markers  %>% 
+  top_n(2, power)
+
+
+#CLSTN2, CPNE4 = Calsyntenin 2, Copine 4	
+cluster4.markers <- FindMarkers(alzheimers2, ident.1 = 4, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster4.markers.top <- cluster4.markers  %>% 
+  top_n(2, power)
+
+
+#CTNNA3, SLC24A2 = Catenin Alpha 3, Solute Carrier Family 24 Member 2	
+cluster5.markers <- FindMarkers(alzheimers2, ident.1 = 5, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster5.markers.top <- cluster5.markers  %>% 
+  top_n(2, power)
+
+
+#PIP4K2A, SLC44A1 = Phosphatidylinositol-5-Phosphate 4-Kinase Type 2 Alpha, Solute Carrier Family 44 Member 1	
+cluster6.markers <- FindMarkers(alzheimers2, ident.1 = 6, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster6.markers.top <- cluster6.markers  %>% 
+  top_n(2, power)
+
+
+#ADARB2, NRXN3 = Adenosine Deaminase RNA Specific B2 (Inactive)	, Neurexin 3	
+cluster7.markers <- FindMarkers(alzheimers2, ident.1 = 7, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster7.markers.top <- cluster7.markers  %>% 
+  top_n(2, power)
+
+
+#GRIP1, KAZN = Glutamate Receptor Interacting Protein 1	, Kazrin, Periplakin Interacting Protein	
+cluster8.markers <- FindMarkers(alzheimers2, ident.1 = 8, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster8.markers.top <- cluster8.markers  %>% 
+  top_n(2, power)
+
+#PLXDC2, RUNX1= Plexin Domain Containing 2	
+cluster9.markers <- FindMarkers(alzheimers2, ident.1 = 9, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster9.markers.top <- cluster9.markers  %>% 
+  top_n(2, power)
+
+#CLDN5,EPAS1 = Claudin 5	
+cluster10.markers <- FindMarkers(alzheimers2, ident.1 = 10, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster10.markers.top <- cluster10.markers  %>% 
+  top_n(2, power)
+
+#TSHZ2, FAM19A2 Teashirt Zinc Finger Homeobox 2	
+cluster11.markers <- FindMarkers(alzheimers2, ident.1 = 11, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster11.markers.top <- cluster11.markers  %>% 
+  top_n(2, power)
+
+#SLC1A2, PITPNC1 = Solute Carrier Family 1 Member 2	
+cluster12.markers <- FindMarkers(alzheimers2, ident.1 = 12, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster12.markers.top <- cluster12.markers  %>% 
+  top_n(2, power)
+
+
+#PRDM16, PAMR1 = PR/SET Domain 16	
+cluster13.markers <- FindMarkers(alzheimers2, ident.1 = 13, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster13.markers.top <- cluster13.markers  %>% 
+  top_n(2, power)
+
+
+alzheimers2.fp <- FeaturePlot(alzheimers2, features = c("GPC5", "IQCJ-SCHIP1", "LHFPL3", "MT-ND4",  "CLSTN2", "CTNNA3", "PIP4K2A", "ADARB2", "GRIP1", "PLXDC2",  "CLDN5", "TSHZ2", "SLC1A2", "PRDM16"))
+alzheimers2.fp
+
+ggsave( filename = "/Users/imanmir/CPSC 545 Project/output/alzheimers2.1_featureplot.jpg", height = 7, width = 12, plot = alzheimers2.fp, quality = 50)
+
+```
+
+```{r}
+#Alzheimers2 Continued
+#HeatMap
+alzheimers2.top <- alzheimers2.clusters.all %>%
+    group_by(cluster) %>%
+    dplyr::filter(avg_log2FC > 1) %>%
+    slice_head(n = 10) %>%
+    ungroup() -> top10
+alzheimers2.top <- DoHeatmap(alzheimers2, features = top10$gene) + NoLegend()
+
+
+#NewClusterIDs
+al2.new.cluster.ids <- c(
+ "Glypican 5",
+ "IQCJ-SCHIP1", 
+ "LHFPL Tetraspan", 
+ "Mitochondrially Encoded NADH", 
+ "Calsyntenin 2	",
+ " Catenin Alpha 3",
+ "PIP4K2A",
+ "Adenosine Deaminase RNA ", 
+ "Glutamate Receptor Interacting Protein",
+ "Plexin Domain",
+ "Claudin 5", 
+ "Teashirt Zinc Finger",  
+ "Solute Carrier", 
+ "PR/SET Domain")
+                     
+names(al2.new.cluster.ids) <- levels(alzheimers2)
+alzheimers2.new <- RenameIdents(alzheimers2, al2.new.cluster.ids)
+
+
+alzheimers2.plot <- DimPlot(alzheimers2.new, reduction = "umap", label = TRUE, label.size = 4.5) + xlab("UMAP 1") + ylab("UMAP 2") +
+    theme(axis.title = element_text(size = 18), legend.text = element_text(size = 18)) + guides(colour = guide_legend(override.aes = list(size = 10)))
+alzheimers2.plot
+
+ggsave( filename = "/Users/imanmir/CPSC 545 Project/output/alzheimers2.1_umap.jpg", height = 7, width = 12, plot = alzheimers2.plot, quality = 50)
+
+saveRDS(alzheimers2.new, file = "/Users/imanmir/CPSC 545 Project/output/alzheimers2.1new.rds")
+```
+
+# Control1 Data
+
+```{r}
+#Load Data FOR CONTROL 1
+control1 <- readRDS("control1.1.rds")
+str(control1)
+View(control1@meta.data)
+
+
+#Visualize data
+control1.clusters.plot <- DimPlot(control1, reduction = "umap", group.by = "seurat_clusters", label= T)
+print(control1.clusters.plot)
+
+#Findall Markers 
+
+#PTPRD, NKAIN2 = Protein Tyrosine Phosphatase Receptor Type D
+cluster0.markers <- FindMarkers(control1, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster0.markers.top <- cluster0.markers  %>% 
+  top_n(2, power)
+
+#SLC1A2, PITPNC1 = Solute Carrier Family 1 Member 2	
+cluster1.markers <- FindMarkers(control1, ident.1 = 1, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster1.markers.top <- cluster1.markers  %>% 
+  top_n(2, power)
+
+
+#CBLN2, CUX2 = Cerebellin 2 Precursor	
+cluster2.markers <- FindMarkers(control1, ident.1 = 2, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster2.markers.top <- cluster2.markers  %>% 
+  top_n(2, power)
+
+
+#ADARB2, SYNPR = Adenosine Deaminase RNA
+cluster3.markers <- FindMarkers(control1, ident.1 = 3, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster3.markers.top <- cluster3.markers  %>% 
+  top_n(2, power)
+
+
+#LHFPL3, PCDH15 = LHFPL Tetraspan
+cluster4.markers <- FindMarkers(control1, ident.1 = 4, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster4.markers.top <- cluster4.markers  %>% 
+  top_n(2, power)
+
+
+#GPC5, SLC1A2 = Glypican 5	
+cluster5.markers <- FindMarkers(control1, ident.1 = 5, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster5.markers.top <- cluster5.markers  %>% 
+  top_n(2, power)
+
+#LRRTM4, AC011287.1 = Leucine Rich Repeat Transmembrane Neuronal 4	
+cluster6.markers <- FindMarkers(control1, ident.1 = 6, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster6.markers.top <- cluster6.markers  %>% 
+  top_n(2, power)
+
+
+#MT-CO1, MT-CO2 = Mitochondrially Encoded Cytochrome C Oxidase I
+cluster7.markers <- FindMarkers(control1, ident.1 = 7, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster7.markers.top <- cluster7.markers  %>% 
+  top_n(2, power)
+
+
+#ZNF385D, CNTNAP2 Zinc Finger Protein
+cluster8.markers <- FindMarkers(control1, ident.1 = 8, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster8.markers.top <- cluster8.markers  %>% 
+  top_n(2, power)
+
+#RBFOX1, AC011287.1 = RNA Binding Fox-1 Homolog 1
+cluster9.markers <- FindMarkers(control1, ident.1 = 9, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster9.markers.top <- cluster9.markers  %>% 
+  top_n(2, power)
+
+
+#NEAT1, TACC1 = Nuclear Paraspeckle Assembly Transcript 1
+cluster10.markers <- FindMarkers(control1, ident.1 = 10, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster10.markers.top <- cluster10.markers  %>% 
+  top_n(2, power)
+
+#GRIP1, KAZN = Glutamate Receptor Interacting Protein 1	
+cluster11.markers <- FindMarkers(control1, ident.1 = 11, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster11.markers.top <- cluster11.markers  %>% 
+  top_n(2, power)
+
+#PTPRD, CPNE4 Protein Tyrosine Phosphatase Receptor Type D
+cluster12.markers <- FindMarkers(control1, ident.1 = 12, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster12.markers.top <- cluster12.markers  %>% 
+  top_n(2, power)
+
+#CTNNA3, SLC44A1 = Catenin Alpha 3	
+cluster12.markers <- FindMarkers(control1, ident.1 = 13, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster13.markers.top <- cluster12.markers  %>% 
+  top_n(2, power)
+
+#CTNNA3 ST18Catenin Alpha 3
+cluster14.markers <- FindMarkers(control1, ident.1 = 14, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster14.markers.top <- cluster14.markers  %>% 
+  top_n(2, power)
+
+#RNF219-AS1, SLC1A2 = "RNF219-AS1"	
+cluster15.markers <- FindMarkers(control1, ident.1 = 15, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster15.markers.top <- cluster15.markers  %>% 
+  top_n(2, power)
+
+control1.fp <- FeaturePlot(control1, features = c("PTPRD", "SLC1A2", "CBLN2", "ADARB2",  "LHFPL3", "GPC5", "LRRTM4", "MT-CO1", "ZNF385D", "RBFOX1",  "NEAT1", "GRIP1", "PTPRD", "CTNNA3", "ST18", "RNF219-AS1"))
+control1.fp
+
+ggsave( filename = "/Users/imanmir/CPSC 545 Project/output/control1.1_featureplot.jpg", height = 7, width = 12, plot = control1.fp, quality = 50)
+
+```
+
+```{r}
+#control1 Continued
+#HeatMap
+control1.top <- control1.clusters.all %>%
+    group_by(cluster) %>%
+    dplyr::filter(avg_log2FC > 1) %>%
+    slice_head(n = 10) %>%
+    ungroup() -> top10
+control1.top <- DoHeatmap(control1, features = top10$gene) + NoLegend()
+
+
+#NewClusterIDs
+c1.new.cluster.ids <- c(
+    "Protein Tyrosine Phosphatase Receptor",
+    "Solute Carrier", 
+    "Cerebellin 2 Precursor", 
+    "Adenosine Deaminase RNA", 
+    "LHFPL Tetraspan",
+    " Glypican 5",
+    "Leucine Rich Transmembrane",
+    "Mitochondrially Encoded Cytochrome C Oxidase ", 
+    "Zinc Finger Protein",
+    "RNA Binding Fox-1 Homolog 1",
+    "Nuclear Paraspeckle", 
+    "Glutamate Receptor",  
+    "Protein Tyrosine Phosphatase", 
+    "Catenin Alpha 3", "Catenin Alpha 3	", "RNF219-AS1" )
+                     
+names(c1.new.cluster.ids) <- levels(control1)
+control1.new <- RenameIdents(control1, c1.new.cluster.ids)
+
+
+control1.plot <- DimPlot(control1.new, reduction = "umap", label = TRUE, label.size = 4.5) + xlab("UMAP 1") + ylab("UMAP 2") +
+    theme(axis.title = element_text(size = 18), legend.text = element_text(size = 18)) + guides(colour = guide_legend(override.aes = list(size = 10)))
+control1.plot
+
+ggsave( filename = "/Users/imanmir/CPSC 545 Project/output/control1.1_umap.jpg", height = 7, width = 12, plot = control1.plot, quality = 50)
+
+saveRDS(control1.new, file = "output/control1.1new.rds")
+```
+
+#control2
+
+```{r}
+#Load Data FOR CONTROL 2
+control2 <- readRDS("control2.1.rds")
+str(control2)
+View(control2@meta.data)
+
+
+#Visualize data
+control2.clusters.plot <- DimPlot(control2, reduction = "umap", group.by = "seurat_clusters", label= T)
+print(control2.clusters.plot)
+
+#Findall Markers 
+
+# CTNNA3, MBP Catenin Alpha 3	
+cluster0.markers <- FindMarkers(control2, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster0.markers.top <- cluster0.markers  %>% 
+  top_n(2, power)
+
+#MAP1B, CALM1 = Microtubule Associated Protein 1B
+cluster1.markers <- FindMarkers(control2, ident.1 = 1, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster1.markers.top <- cluster1.markers  %>% 
+  top_n(2, power)
+
+
+#SLC1A2, ADGRV1 Solute Carrier Family 1 Member 2
+cluster2.markers <- FindMarkers(control2, ident.1 = 2, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster2.markers.top <- cluster2.markers  %>% 
+  top_n(2, power)
+
+
+#LRMDA, SFMBT2 Leucine Rich Melanocyte Differentiation Associated	
+cluster3.markers <- FindMarkers(control2, ident.1 = 3, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster3.markers.top <- cluster3.markers  %>% 
+  top_n(2, power)
+
+
+#IQCJ-SCHIP1, KCNIP4, same
+cluster4.markers <- FindMarkers(control2, ident.1 = 4, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster4.markers.top <- cluster4.markers  %>% 
+  top_n(2, power)
+
+
+#IQCJ-SCHIP1, KCNIP4, same
+cluster5.markers <- FindMarkers(control2, ident.1 = 5, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster5.markers.top <- cluster5.markers  %>% 
+  top_n(2, power)
+
+#LHFPL3, TNR LHFPL Tetraspan Subfamily Member 3	
+cluster6.markers <- FindMarkers(control2, ident.1 = 6, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster6.markers.top <- cluster6.markers  %>% 
+  top_n(2, power)
+
+
+#RBFOX1, RGS6 RNA Binding Fox-1 Homolog 1
+cluster7.markers <- FindMarkers(control2, ident.1 = 7, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster7.markers.top <- cluster7.markers  %>% 
+  top_n(2, power)
+
+
+#CNTNAP2, NXPH1 Contactin Associated Protein 2	
+cluster8.markers <- FindMarkers(control2, ident.1 = 8, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster8.markers.top <- cluster8.markers  %>% 
+  top_n(2, power)
+
+#ERBB4, KAZN Erb-B2 Receptor Tyrosine Kinase 4	
+cluster9.markers <- FindMarkers(control2, ident.1 = 9, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster9.markers.top <- cluster9.markers  %>% 
+  top_n(2, power)
+
+#ASIC2, KIAA1217 Acid Sensing Ion Channel Subunit 2	
+cluster10.markers <- FindMarkers(control2, ident.1 = 10, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster10.markers.top <- cluster10.markers  %>% 
+  top_n(2, power)
+
+#CNTN4, TSHZ2 Contactin 4	
+cluster11.markers <- FindMarkers(control2, ident.1 = 11, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster11.markers.top <- cluster11.markers  %>% 
+  top_n(2, power)
+
+#KCNIP4, CNTN5 	Potassium Voltage-Gated Channel Interacting Protein 4
+cluster12.markers <- FindMarkers(control2, ident.1 = 12, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster12.markers.top <- cluster12.markers  %>% 
+  top_n(2, power)
+
+#KIAA1217, ROBO2, same
+cluster13.markers <- FindMarkers(control2, ident.1 = 13, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster13.markers.top <- cluster13.markers  %>% 
+  top_n(2, power)
+
+#EPAS1, COBLL1 Endothelial PAS Domain Protein 1	
+cluster14.markers <- FindMarkers(control2, ident.1 = 14, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster14.markers.top <- cluster14.markers  %>% 
+  top_n(2, power)
+
+#MAP1B, MT-CO3 Microtubule Associated Protein 1B
+cluster15.markers <- FindMarkers(control2, ident.1 = 15, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster15.markers.top <- cluster15.markers  %>% 
+  top_n(2, power)
+
+#LINC00511, OPHN1 Long Intergenic Non-Protein Coding RNA 511	
+cluster16.markers <- FindMarkers(control2, ident.1 = 16, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+cluster16.markers.top <- cluster16.markers  %>% 
+  top_n(2, power)
+
+
+control2.fp <-FeaturePlot(control2, features = c("CTNNA3", "MAP1B", "SLC1A2", "LRMDA", "IQCJ-SCHIP1", "IQCJ-SCHIP1", "LHFPL3", "RBFOX1", "CNTNAP2", "ERBB4", "ASIC2", "CNTN4", "KCNIP4", "KIAA1217", "EPAS1", "MAP1B", "LINC00511"))
+
+control2.fp
+
+ggsave( filename = "/Users/imanmir/CPSC 545 Project/output/control2.1_featureplot.jpg", height = 7, width = 12, plot = control2.fp, quality = 50)
+
+```
+
+```{r}
+#control1 Continued
+control2.clusters.all <- FindAllMarkers(control2, only.pos = TRUE)
+
+#HeatMap
+control2.top <- control2.clusters.all %>%
+    group_by(cluster) %>%
+    dplyr::filter(avg_log2FC > 1) %>%
+    slice_head(n = 10) %>%
+    ungroup() -> top10
+control2.top <- DoHeatmap(control2, features = top10$gene) + NoLegend()
+
+
+#NewClusterIDs
+c2.new.cluster.ids <- c(
+    "Catenin Alpha 3",
+    "Microtubule Associated Protein 1B", 
+    "Solute Carrier", 
+    "Leucine Rich Melanocyte", 
+    "IQCJ-SCHIP1",
+    " IQCJ-SCHIP1",
+    "Leucine Rich Transmembrane",
+    "LHFPL Tetraspane ", 
+    "RNA Binding Fox-1",
+    "Contactin Associated Protein ",
+    "Erb-B2 Receptor Tyrosine Kinase", 
+    "Acid Sensing Ion Channel",  
+    "Contactin 4", 
+    "Potassium Voltage-Gated Channel", "KIAA1217	", "Endothelial PAS Domain", "Microtubule Associated Protein", "Long Intergenic Non-Protein Coding RNA")
+                     
+names(c2.new.cluster.ids) <- levels(control2)
+control2.new <- RenameIdents(control2, c2.new.cluster.ids)
+
+
+control2.plot <- DimPlot(control2.new, reduction = "umap", label = TRUE, label.size = 4.5) + xlab("UMAP 1") + ylab("UMAP 2") +
+    theme(axis.title = element_text(size = 18), legend.text = element_text(size = 18)) + guides(colour = guide_legend(override.aes = list(size = 10)))
+control2.plot
+
+ggsave( filename = "/Users/imanmir/CPSC 545 Project/output/control2.1_umap.jpg", height = 7, width = 12, plot = control2.plot, quality = 50)
+
+saveRDS(control2.new, file = "output/control2.1new.rds")
+```
+

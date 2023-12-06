@@ -1,0 +1,371 @@
+---
+title: "CSPC_545_Project"
+output: github_document
+---
+
+
+```{r}
+library(Seurat)
+library(SeuratObject)
+library(dplyr)
+library(patchwork)
+library(irlba)
+```
+
+Loading Datasets 
+```{r}
+#Alzheimer Data #1
+alzheimers1.data <- Read10X(data.dir = "A1_AD Braak stage III:IV")
+
+#Alzheimer Data #2
+alzheimers2.data <- Read10X(data.dir = "A3_AD Braak stage III:IV")
+
+
+#Control Data #1 
+control1.data <-Read10X(data.dir = "A2_control brain_raw")
+
+#Control Data #2
+control2.data <-Read10X(data.dir = "A4_control brain_raw")
+
+
+```
+
+Creating Seurat Objects 
+```{r}
+#Alzheimer Data #1
+alzheimers1 <- CreateSeuratObject(counts = alzheimers1.data, project = "alzheimers1", min.cells = 3, min.features = 200)
+
+#Alzheimer Data #2
+alzheimers2 <- CreateSeuratObject(counts = alzheimers2.data, project = "alzheimers2", min.cells = 3, min.features = 200)
+
+#Control Data #1 
+control1 <- CreateSeuratObject(counts = control1.data, project = "control1", min.cells = 3, min.features = 200)
+
+#Control Data #2
+control2 <- CreateSeuratObject(counts = control2.data, project = "control2", min.cells = 3, min.features = 200)
+
+#All objects
+alzheimers1
+alzheimers2
+control1
+control2
+```
+
+Pre-Processing Workflow 
+```{r}
+# The [[ operator can add columns to object metadata. This is a great place to stash QC stats
+alzheimers1[["percent.mt"]] <- PercentageFeatureSet(alzheimers1, pattern = "^MT-")
+alzheimers2[["percent.mt"]] <- PercentageFeatureSet(alzheimers2, pattern = "^MT-")
+control1[["percent.mt"]] <- PercentageFeatureSet(control1, pattern = "^MT-")
+control2[["percent.mt"]] <- PercentageFeatureSet(control2, pattern = "^MT-")
+
+# Show QC metrics for the first 10 cells
+head(alzheimers1@meta.data, 10)
+head(alzheimers2@meta.data, 10)
+head(control1@meta.data, 10)
+head(control2@meta.data, 10)
+
+
+
+```
+
+```{r, fig.width=10, fig.height=4}
+# Visualize QC metrics as a violin plot for Alzheimers 1 
+#Can conclude that want to filter cells that have unique feature counts over 10,000
+#Can conclude that want to filter cells that >10% mitochondrial counts
+
+
+al1.violin.plot<-VlnPlot(alzheimers1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+
+print(al1.violin.plot)
+
+al1.plot1 <- FeatureScatter(alzheimers1, feature1 = "nCount_RNA", feature2 = "percent.mt")
+al1.plot2 <- FeatureScatter(alzheimers1, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+al1.together <- al1.plot1 + al1.plot2
+print(al1.together)
+
+#Subsetting Data
+alzheimers1.sub <- subset(alzheimers1, subset = nFeature_RNA > 150 & nFeature_RNA < 10000 & percent.mt < 10)
+
+#Normalizing Data
+alzheimers1 <- NormalizeData(alzheimers1.sub, normalization.method = "LogNormalize", scale.factor = 10000)
+
+```
+
+
+```{r}
+# Visualize QC metrics as a violin plot for Alzheimers 2
+#Can conclude that want to filter cells that have unique feature counts over 7500 or less than 150
+#Can conclude that want to filter cells that >80% mitochondrial counts
+
+
+al2.violin.plot <- VlnPlot(alzheimers2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+al2.violin.plot
+
+al2.plot1 <- FeatureScatter(alzheimers2, feature1 = "nCount_RNA", feature2 = "percent.mt")
+al2.plot2 <- FeatureScatter(alzheimers2, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+al2.together<- al2.plot1 + al2.plot2
+al2.together
+
+alzheimers2.sub <- subset(alzheimers2, subset = nFeature_RNA > 150 & nFeature_RNA < 7500 & percent.mt < 80)
+
+#Normalizing Data
+alzheimers2 <- NormalizeData(alzheimers2.sub, normalization.method = "LogNormalize", scale.factor = 10000)
+
+```
+
+```{r}
+# Visualize QC metrics as a violin plot for Control 1
+#Can conclude that want to filter cells that have unique feature counts over 7000 or less than 150
+#Can conclude that want to filter cells that <80% mitochondrial counts
+
+
+c1.violin.plot <- VlnPlot(control1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+c1.violin.plot
+
+c1.plot1 <- FeatureScatter(control1, feature1 = "nCount_RNA", feature2 = "percent.mt")
+c1.plot2 <- FeatureScatter(control1, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+c1.together <- c1.plot1 + c1.plot2
+c1.together
+
+control1.sub <- subset(control1, subset = nFeature_RNA > 150 & nFeature_RNA < 7000 & percent.mt < 80)
+
+#Normalizing Data
+control1 <- NormalizeData(control1.sub, normalization.method = "LogNormalize", scale.factor = 10000)
+
+
+```
+
+```{r}
+# Visualize QC metrics as a violin plot for Control 2
+#Can conclude that want to filter cells that have unique feature counts over 13000 or less than 150
+#Can conclude that want to filter cells that >15% mitochondrial counts
+
+
+c2.violin.plot <- VlnPlot(control2, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+c2.violin.plot
+
+c2.plot1 <- FeatureScatter(control2, feature1 = "nCount_RNA", feature2 = "percent.mt")
+c2.plot2 <- FeatureScatter(control2, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+c2.together <- c2.plot1 + c2.plot2
+c2.together
+
+control2.sub <- subset(control2, subset = nFeature_RNA > 150 & nFeature_RNA < 13000 & percent.mt < 15)
+
+#Normalizing Data
+control2 <- NormalizeData(control2.sub, normalization.method = "LogNormalize", scale.factor = 10000)
+
+```
+
+
+Determining Highly Variable Features - Feature Selection
+```{r, fig.width=10, fig.height=4}
+alzheimers1.features <- FindVariableFeatures(alzheimers1, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+alzheimers1.top10 <- head(VariableFeatures(alzheimers1.features), 10)
+alzheimers1.top10
+
+# plot variable features with and without labels
+alzheimers1.top10.plot1 <- VariableFeaturePlot(alzheimers1.features)
+alzheimers1.top10.plot2 <- LabelPoints(plot = alzheimers1.top10.plot1, points = alzheimers1.top10, repel = TRUE)
+alzheimers1.top10.together <- alzheimers1.top10.plot1 + alzheimers1.top10.plot2
+alzheimers1.top10.together
+
+
+```
+
+
+```{r, fig.width=10, fig.height=4}
+alzheimers2.features <- FindVariableFeatures(alzheimers2, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+alzheimers2.top10 <- head(VariableFeatures(alzheimers2.features), 10)
+alzheimers2.top10
+
+# plot variable features with and without labels
+alzheimers2.top10.plot1 <- VariableFeaturePlot(alzheimers2.features)
+alzheimers2.top10.plot2 <- LabelPoints(plot = alzheimers2.top10.plot1, points = alzheimers2.top10, repel = TRUE)
+alzheimers2.top10.together <- alzheimers2.top10.plot1 + alzheimers2.top10.plot2
+alzheimers2.top10.together
+```
+
+```{r, fig.width=10, fig.height=4}
+control1.features <- FindVariableFeatures(control1, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+control1.top10 <- head(VariableFeatures(control1.features), 10)
+control1.top10
+
+# plot variable features with and without labels
+control1.top10.plot1 <- VariableFeaturePlot(control1.features)
+control1.top10.plot2 <- LabelPoints(plot = control1.top10.plot1, points = control1.top10, repel = TRUE)
+control1.together<- control1.top10.plot1 + control1.top10.plot2
+control1.together
+
+```
+
+```{r, fig.width=10, fig.height=4}
+control2.features <- FindVariableFeatures(control2, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+control2.top10 <- head(VariableFeatures(control2.features), 10)
+control2.top10
+
+# plot variable features with and without labels
+control2.plot1 <- VariableFeaturePlot(control2.features)
+control2.plot2 <- LabelPoints(plot = control2.plot1, points = control2.top10, repel = TRUE)
+control2.together <- control2.plot1 + control2.plot2
+
+control2.together
+
+```
+
+
+Scaling Data and Linear Dimensional Reduction 
+
+```{r}
+#Alzheimer Data #1
+all.genes <- rownames(alzheimers1.features)
+alzheimers1 <- ScaleData(alzheimers1.features, features = all.genes)
+
+#Alzheimer Data #2
+all.genes2 <- rownames(alzheimers2.features)
+alzheimers2 <- ScaleData(alzheimers2.features, features = all.genes2)
+
+#Control Data #1 
+all.genes3 <- rownames(control1.features)
+control1 <- ScaleData(control1.features, features = all.genes3)
+
+#Control Data #2
+all.genes4 <- rownames(control2.features)
+control2 <- ScaleData(control2.features, features = all.genes4)
+```
+
+Linear Dimensional Reduction
+```{r, fig.width=10, fig.height=10}
+#Alzheimer1 Data
+
+alzheimers1 <- RunPCA(alzheimers1, features = VariableFeatures(object = alzheimers1))
+
+# Examine and visualize PCA results a few different ways
+
+print(alzheimers1[["pca"]], dims = 1:5, nfeatures = 5)
+
+VizDimLoadings(alzheimers1, dims = 1:2, reduction = "pca")
+
+DimPlot(alzheimers1, reduction = "pca") + NoLegend()
+
+DimHeatmap(alzheimers1, dims = 1, cells = 500, balanced = TRUE)
+
+DimHeatmap(alzheimers1, dims = 1:15, cells = 500, balanced = TRUE)
+
+
+```
+
+```{r, fig.width=10, fig.height=10}
+#Alzheimer2 Data
+
+alzheimers2 <- RunPCA(alzheimers2, features = VariableFeatures(object = alzheimers2))
+
+# Examine and visualize PCA results a few different ways
+
+print(alzheimers2[["pca"]], dims = 1:5, nfeatures = 5)
+
+VizDimLoadings(alzheimers2, dims = 1:2, reduction = "pca")
+
+DimPlot(alzheimers2, reduction = "pca") + NoLegend()
+
+DimHeatmap(alzheimers2, dims = 1, cells = 500, balanced = TRUE)
+
+DimHeatmap(alzheimers2, dims = 1:15, cells = 500, balanced = TRUE)
+```
+
+```{r, fig.width=10, fig.height=10}
+#Control1 Data
+
+control1 <- RunPCA(control1, features = VariableFeatures(object = control1))
+
+# Examine and visualize PCA results a few different ways
+
+print(control1[["pca"]], dims = 1:5, nfeatures = 5)
+
+VizDimLoadings(control1, dims = 1:2, reduction = "pca")
+
+DimPlot(control1, reduction = "pca") + NoLegend()
+
+DimHeatmap(control1, dims = 1, cells = 500, balanced = TRUE)
+
+DimHeatmap(control1, dims = 1:15, cells = 500, balanced = TRUE)
+```
+
+```{r, fig.width=10, fig.height=10}
+
+#Control2 Data
+
+control2 <- RunPCA(control2, features = VariableFeatures(object = control2))
+
+# Examine and visualize PCA results a few different ways
+
+print(control2[["pca"]], dims = 1:5, nfeatures = 5)
+
+VizDimLoadings(control2, dims = 1:2, reduction = "pca")
+
+DimPlot(control2, reduction = "pca") + NoLegend()
+
+DimHeatmap(control2, dims = 1, cells = 500, balanced = TRUE)
+
+DimHeatmap(control2, dims = 1:15, cells = 500, balanced = TRUE)
+
+```
+Dimensionality of Dataset
+
+```{r fig.width=10, fig.height=10}
+ElbowPlot(alzheimers1) #11
+ElbowPlot(alzheimers2) #12
+ElbowPlot(control1) #11
+ElbowPlot(control2) #9?
+```
+
+Clustering of Cells 
+```{r}
+#Alzheimer 1
+alzheimers1 <- FindNeighbors(alzheimers1, dims = 1:10)
+alzheimers1 <- FindClusters(alzheimers1, resolution = 0.5)
+head(Idents(alzheimers1), 5)
+
+#Alzheimer 2 
+alzheimers2<- FindNeighbors(alzheimers2, dims = 1:10)
+alzheimers2 <- FindClusters(alzheimers2, resolution = 0.5)
+head(Idents(alzheimers2), 5)
+
+#Control 1
+control1<- FindNeighbors(control1, dims = 1:10)
+control1 <- FindClusters(control1, resolution = 0.5)
+head(Idents(control1), 5)
+
+#Control 2
+control2<- FindNeighbors(control2, dims = 1:10)
+control2 <- FindClusters(control2, resolution = 0.5)
+head(Idents(control2), 5)
+```
+
+Run non-linear dimensional reduction (UMAP/tSNE)
+```{r}
+#Alzheimer 1
+alzheimers1 <- RunUMAP(alzheimers1, dims = 1:10)
+DimPlot(alzheimers1, reduction = "umap")
+
+#Alzheimer 2 
+alzheimers2 <- RunUMAP(alzheimers2, dims = 1:10)
+DimPlot(alzheimers2, reduction = "umap")
+
+#Control 1
+control1 <- RunUMAP(control1, dims = 1:10)
+DimPlot(control1, reduction = "umap")
+
+#Control 2
+control2 <- RunUMAP(control2, dims = 1:10)
+DimPlot(control2, reduction = "umap")
+saveRDS(control2, "control2.1.rds")
+```

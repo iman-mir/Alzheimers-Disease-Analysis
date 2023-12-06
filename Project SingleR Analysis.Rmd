@@ -1,0 +1,63 @@
+---
+title: "SingleR Analysis"
+output: html_document
+date: "2023-12-06"
+---
+
+```{r setup}
+
+library(SingleR)
+library(Seurat)
+
+
+```
+
+
+```{r fig.width=10, fig.height=10}
+al1 <- readRDS("/Users/imanmir/CPSC 545 Project/alzheimers1.1.rds") 
+a <- DimPlot(al1, reduction = "umap", label=TRUE)
+
+
+ref <- celldex::HumanPrimaryCellAtlasData()
+
+results <- SingleR(test = as.SingleCellExperiment(al1), ref = ref, labels = ref$label.main)
+
+al1$singlr_labels <- results$labels
+
+a1 <- DimPlot(al1, reduction = 'umap', group.by = 'singlr_labels', label = FALSE)
+
+ref <- celldex::HumanPrimaryCellAtlasData()
+
+al2 <- readRDS("/Users/imanmir/CPSC 545 Project/alzheimers2.1.rds") 
+
+results <- SingleR(test = as.SingleCellExperiment(al2), ref = ref, labels = ref$label.main)
+
+al2$singlr_labels <- results$labels
+
+a2 <- DimPlot(al2, reduction = 'umap', group.by = 'singlr_labels', label = FALSE)
+
+
+ref <- celldex::HumanPrimaryCellAtlasData()
+
+c1 <- readRDS("/Users/imanmir/CPSC 545 Project/control1.1.rds") 
+
+results <- SingleR(test = as.SingleCellExperiment(c1), ref = ref, labels = ref$label.main)
+
+c1$singlr_labels <- results$labels
+
+c1 <- DimPlot(c1, reduction = 'umap', group.by = 'singlr_labels', label = FALSE)
+
+
+ref <- celldex::HumanPrimaryCellAtlasData()
+
+c2 <- readRDS("/Users/imanmir/CPSC 545 Project/control2.1.rds") 
+
+results <- SingleR(test = as.SingleCellExperiment(c2), ref = ref, labels = ref$label.main)
+
+c2$singlr_labels <- results$labels
+
+c2 <- DimPlot(c2, reduction = 'umap', group.by = 'singlr_labels', label = FALSE)
+
+
+```
+
