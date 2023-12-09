@@ -1,0 +1,43 @@
+---
+title: "Part 6"
+output: html_document
+date: "2023-12-08"
+---
+
+```{r setup}
+
+library(SingleR)
+library(Seurat)
+library(ggplot2)
+
+
+```
+
+#Alzheimers SingleR 
+
+```{r}
+al1 <- readRDS("/Users/imanmir/CPSC 545 Project/output_3/alzheimers.combined.new.rds") 
+
+ref <- celldex::HumanPrimaryCellAtlasData()
+
+results <- SingleR(test = as.SingleCellExperiment(al1), ref = ref, labels = ref$label.main)
+
+al1$singlr_labels <- results$labels
+
+a1 <- DimPlot(al1, reduction = 'umap', group.by = 'singlr_labels', label = FALSE)
+
+```
+
+#Controls SingleR
+```{r}
+c1 <- readRDS("/Users/imanmir/CPSC 545 Project/output_3/controls.combined.new.rds") 
+
+results <- SingleR(test = as.SingleCellExperiment(c1), ref = ref, labels = ref$label.main)
+
+c1$singlr_labels <- results$labels
+
+c1 <- DimPlot(c1, reduction = 'umap', group.by = 'singlr_labels', label = FALSE)
+
+
+```
+

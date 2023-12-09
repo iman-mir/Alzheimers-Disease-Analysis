@@ -1,0 +1,172 @@
+---
+title: "Part 5"
+output: html_document
+date: "2023-12-08"
+---
+
+```{r}
+library(Seurat)
+library(SeuratObject)
+library(dplyr)
+library(patchwork)
+library(irlba)
+library(BiocManager)
+library(multtest)
+library(metap)
+library(presto)
+library(ggplot2)
+library(SingleR)
+library(celldex)
+library(scRNAseq)
+library(scuttle)
+library(ExperimentHub)
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+library(purrr)
+```
+
+```{r fig.width=10, fig.height=10}
+#Load Data FOR ALZHEIMER COMBINED
+alzheimers.combined <- readRDS("alzheimers.combined.rds")
+str(alzheimers.combined)
+View(alzheimers.combined@meta.data)
+
+alzheimers.combined <- JoinLayers(object = alzheimers.combined)
+
+#Visualize data
+alzheimers.combined.plot <- DimPlot(alzheimers.combined, reduction = "umap", group.by = "seurat_clusters", label= T)
+alzheimers.combined.plot
+
+#Findall Markers 
+alzheimers.combined.clusters.all <- FindAllMarkers(alzheimers.combined, min.pct =  0.25, 
+                             min.diff.pct = 0.25, only.pos = TRUE)
+
+
+#Determining top genes per cluster 
+gen_marker_table <- function(x){
+  alzheimers.combined.clusters.all[alzheimers.combined.clusters.all$cluster == x, ] %>%
+  head(n=1)
+}
+
+top_markers <- map_dfr(0:16, gen_marker_table)
+
+View(top_markers)
+
+#Creating Feature Plots
+plota <- FeaturePlot(alzheimers.combined, features = c("ENPP2", "ADAM28", "CBLN2", "SNRPN", "FAM189A2", "F11-AS1", "ZNF148", "MEGF11",  "CPNE4", "FLT1", "FYB1", "CTNNA3", "SLC1A2", "F11-AS1", "CSF3R", "LRAT", "LPAR5"  ))
+
+
+```
+
+
+```{r fig.width=10, fig.height=10}
+#Load Data FOR Controls COMBINED
+controls.combined <- readRDS("controls.combined.rds")
+str(controls.combined)
+View(controls.combined@meta.data)
+
+controls.combined <- JoinLayers(object = controls.combined)
+
+#Visualize data
+controls.combined.plot <- DimPlot(controls.combined, reduction = "umap", group.by = "seurat_clusters", label= T)
+controls.combined.plot
+
+#Findall Markers 
+controls.combined.clusters.all <- FindAllMarkers(controls.combined, min.pct =  0.25, 
+                             min.diff.pct = 0.25, only.pos = TRUE)
+
+
+#Determining top genes per cluster 
+gen_marker_table <- function(x){
+  controls.combined.clusters.all[controls.combined.clusters.all$cluster == x, ] %>%
+  head(n=1)
+}
+
+top_markers_controls <- map_dfr(0:20, gen_marker_table)
+
+View(top_markers_controls)
+
+#Creating Feature Plots
+plotc <- FeaturePlot(controls.combined, features = c("ENPP2", "CUX2", "NXPH1", "LINC00499", "NORAD", "MSC-AS1", "RNF219-AS1", "DOCK8",  "GRB14", "ST18", "AC109466.1", "BTBD11", "SEMA3E", "VCAN", "EPAS1", "AC004852.2", "AC008415.1", "VCAN", "MRVI1", "DOCK8", "RAMP3"  ))
+```
+
+
+Alzheimers Cluster Ids
+```{r fig.width=10, fig.height=10}
+#NewClusterIDs
+alzheimers.combined.new.cluster.ids <- c(
+    "Ectonucleotide Pyrophosphatase",
+    "ADAM Metallopeptidase", 
+    "Cerebellin 2 Precursor	", 
+    "Small Nuclear Ribonucleoprotein Polypeptide N	", 
+    "Endosomal Transmembrane Epsin Interactor 1	",
+    "FAM189A2",
+    "F11 Antisense RNA 1",
+    "Zinc Finger Protein 148", 
+    "	Multiple EGF Like Domains 11",
+    "Copine 4	",
+    "Fms Related Receptor Tyrosine Kinase 1", 
+    "FYN Binding Protein 1",  
+    "Catenin Alpha 3	", 
+    "Solute Carrier Family 1 Member 2",
+    "F11 Antisense RNA 1", 
+    "	Colony Stimulating Factor 3 Receptor", 
+    "Lecithin Retinol Acyltransferase", 
+    "Lysophosphatidic Acid Receptor 5"
+)
+                     
+names(alzheimers.combined.new.cluster.ids) <- levels(alzheimers.combined)
+alzheimers.combined.new <- RenameIdents(alzheimers.combined, alzheimers.combined.new.cluster.ids)
+
+
+alzheimers.combined.plot <- DimPlot(alzheimers.combined.new, reduction = "umap", label = TRUE, label.size = 4.5) + xlab("UMAP 1") + ylab("UMAP 2") +
+    theme(axis.title = element_text(size = 18), legend.text = element_text(size = 18)) + guides(colour = guide_legend(override.aes = list(size = 10)))
+alzheimers.combined.plot
+
+ggsave( filename = "/Users/imanmir/CPSC 545 Project/output_3/alzheimers.combined_umap_final.jpg", height = 7, width = 12, plot = alzheimers.combined.plot, quality = 50)
+
+saveRDS(alzheimers.combined.new, file = "output_3/alzheimers.combined.new.rds")
+```
+
+Controls Cluster Ids
+```{r}
+#NewClusterIDs
+control.new.cluster.ids <- c(
+    "Ectonucleotide Pyrophosphatase",
+    "Cut Like Homeobox 2", 
+    "Neurexophilin 1	", 
+    "Long Intergenic Non-Protein ", 
+    "Non-Coding RNA",
+    "MSC Antisense RNA 1",
+    "OBI1 Antisense RNA 1",
+    "Dedicator Of Cytokinesis 8", 
+    "Growth Factor Receptor",
+    "ST18",
+    "AC109466.1", 
+    "Ankyrin Repeat",  
+    "Semaphorin 3E", 
+    "Versican", 
+    "	Endothelial PAS Domain", 
+    "AC004852.2", 
+    "AC008415.1", 
+    "Versican", 
+    "MRVI1", 
+    "Dedicator Of Cytokinesis 8", 
+    "Receptor Activity Modifying Protein 3"
+    
+)
+                     
+names(control.new.cluster.ids) <- levels(controls.combined)
+controls.combined.new <- RenameIdents(controls.combined, control.new.cluster.ids)
+
+
+controls.plot <- DimPlot(controls.combined.new, reduction = "umap", label = TRUE, label.size = 4.5) + xlab("UMAP 1") + ylab("UMAP 2") +
+    theme(axis.title = element_text(size = 18), legend.text = element_text(size = 18)) + guides(colour = guide_legend(override.aes = list(size = 10)))
+controls.plot
+
+ggsave( filename = "/Users/imanmir/CPSC 545 Project/output_3/controls.combined_umap_final.jpg", height = 7, width = 12, plot = controls.plot, quality = 50)
+
+saveRDS(controls.combined, file = "output_3/controls.combined.new.rds")
+```
+

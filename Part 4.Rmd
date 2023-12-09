@@ -1,0 +1,231 @@
+---
+title: "Project Combines"
+output: html_document
+date: "2023-12-08"
+---
+
+```{r}
+library(Seurat)
+```
+#Loading Data
+
+```{r setup, include=TRUE}
+#Alzheimer Data #1
+alzheimers1.data <- Read10X(data.dir = "A1_AD Braak stage III:IV")
+
+#Alzheimer Data #2
+alzheimers2.data <- Read10X(data.dir = "A3_AD Braak stage III:IV")
+
+
+#Control Data #1 
+control1.data <-Read10X(data.dir = "A2_control brain_raw")
+
+#Control Data #2
+control2.data <-Read10X(data.dir = "A4_control brain_raw")
+
+
+
+```
+
+# Creating Seurat Objects
+```{r}
+#Alzheimer Data #1
+alzheimers1 <- CreateSeuratObject(counts = alzheimers1.data, project = "alzheimers1", min.cells = 3, min.features = 200)
+
+#Alzheimer Data #2
+alzheimers2 <- CreateSeuratObject(counts = alzheimers2.data, project = "alzheimers2", min.cells = 3, min.features = 200)
+
+#Control Data #1 
+control1 <- CreateSeuratObject(counts = control1.data, project = "control1", min.cells = 3, min.features = 200)
+
+#Control Data #2
+control2 <- CreateSeuratObject(counts = control2.data, project = "control2", min.cells = 3, min.features = 200)
+
+#Combining Alzheimers
+alzheimers.combined <- merge(alzheimers1, alzheimers2, project = "alzheimers.combined" )
+
+#Combining Controls
+controls.combined <- merge(control1, control2, project = "controls.combined" )
+
+#All objects
+alzheimers.combined
+controls.combined
+```
+
+# Pre-Processing Workflow 
+
+```{r}
+# The [[ operator can add columns to object metadata. This is a great place to stash QC stats
+alzheimers.combined[["percent.mt"]] <- PercentageFeatureSet(alzheimers.combined, pattern = "^MT-")
+
+controls.combined[["percent.mt"]] <- PercentageFeatureSet(controls.combined, pattern = "^MT-")
+
+
+# Show QC metrics for the first 10 cells
+head(alzheimers.combined@meta.data, 10)
+head(controls.combined@meta.data, 10)
+
+```
+
+```{r}
+# Visualize QC metrics as a violin plot for Alzheimers Combined 
+
+alzheimers.combined.violin.plot <- VlnPlot(alzheimers.combined, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+alzheimers.combined.violin.plot
+
+alc.plot1 <- FeatureScatter(alzheimers.combined, feature1 = "nCount_RNA", feature2 = "percent.mt")
+alc.plot2 <- FeatureScatter(alzheimers.combined, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+alc.together <- alc.plot1 + alc.plot2
+print(alc.together)
+
+#Subsetting Data 
+  lb <- quantile(alzheimers.combined[["nFeature_RNA"]]$nFeature_RNA, probs = 0.01)
+  ub <- quantile(alzheimers.combined[["nFeature_RNA"]]$nFeature_RNA, probs = 0.99)
+alzheimers.combined <- alzheimers.combined[, alzheimers.combined[["nFeature_RNA"]] > lb & alzheimers.combined[["nFeature_RNA"]] < ub & alzheimers.combined[["percent.mt"]] < 15] 
+  
+
+#Normalizing Data
+alzheimers.combined <- NormalizeData(alzheimers.combined , normalization.method = "LogNormalize", scale.factor = 10000)
+```
+
+
+```{r}
+# Visualize QC metrics as a violin plot for Controls Combined 
+
+controls.combined.violin.plot <- VlnPlot(controls.combined, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+controls.combined.violin.plot
+
+c.plot1 <- FeatureScatter(controls.combined, feature1 = "nCount_RNA", feature2 = "percent.mt")
+c.plot2 <- FeatureScatter(controls.combined, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+c.together <- c.plot1 + c.plot2
+c.together
+
+#Subsetting Data 
+ lb <- quantile(controls.combined[["nFeature_RNA"]]$nFeature_RNA, probs = 0.01)
+  ub <- quantile(controls.combined[["nFeature_RNA"]]$nFeature_RNA, probs = 0.99)
+controls.combined <- controls.combined[, controls.combined[["nFeature_RNA"]] > lb & controls.combined[["nFeature_RNA"]] < ub & controls.combined[["percent.mt"]] < 15] 
+
+
+#Normalizing Data
+controls.combined <- NormalizeData(controls.combined, normalization.method = "LogNormalize", scale.factor = 10000)
+```
+
+# Determining Highly Variable Features - Feature Selection
+
+```{r}
+#Alzheimers.combined
+alzheimers.features <- FindVariableFeatures(alzheimers.combined, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+alzheimers.top10 <- head(VariableFeatures(alzheimers.features), 10)
+alzheimers.top10
+
+# plot variable features with and without labels
+alzheimers.top10.plot1 <- VariableFeaturePlot(alzheimers.features)
+alzheimers.top10.plot2 <- LabelPoints(plot = alzheimers.top10.plot1, points = alzheimers.top10, repel = TRUE)
+alzheimers.top10.together <- alzheimers.top10.plot1 + alzheimers.top10.plot2
+alzheimers.top10.together
+```
+
+```{r}
+#Controls Combined 
+controls.features <- FindVariableFeatures(controls.combined, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+controls.top10 <- head(VariableFeatures(controls.features), 10)
+controls.top10 
+
+# plot variable features with and without labels
+controls.top10.plot1 <- VariableFeaturePlot(controls.features)
+controls.top10.plot2 <- LabelPoints(plot = controls.top10.plot1, points = controls.top10, repel = TRUE)
+controls.top10.together <- controls.top10.plot1 + controls.top10.plot2
+controls.top10.together
+```
+
+# Scaling Data and Linear Dimensional Reduction 
+```{r}
+#Alzheimers Combined
+alzheimers.combined <- ScaleData(alzheimers.features, verbose = FALSE)
+
+#Controls Combined
+controls.combined <- ScaleData(controls.features,verbose = FALSE)
+```
+
+
+
+# Linear Dimensional Reduction
+```{r, fig.width=10, fig.height=10}
+#Alzheimers Data
+
+alzheimers.combined <- RunPCA(alzheimers.combined, features = VariableFeatures(object = alzheimers.combined))
+
+# Examine and visualize PCA results a few different ways
+
+print(alzheimers.combined[["pca"]], dims = 1:5, nfeatures = 5)
+
+plota <- VizDimLoadings(alzheimers.combined, dims = 1:2, reduction = "pca")
+
+DimPlot(alzheimers.combined, reduction = "pca") + NoLegend()
+
+DimHeatmap(alzheimers.combined, dims = 1, cells = 500, balanced = TRUE)
+
+DimHeatmap(alzheimers.combined, dims = 1:15, cells = 500, balanced = TRUE)
+
+
+```
+
+```{r}
+#Controls Data
+
+controls.combined <- RunPCA(controls.combined, features = VariableFeatures(object = controls.combined))
+
+# Examine and visualize PCA results a few different ways
+
+print(controls.combined[["pca"]], dims = 1:5, nfeatures = 5)
+
+plotc <- VizDimLoadings(controls.combined, dims = 1:2, reduction = "pca")
+
+DimPlot(controls.combined, reduction = "pca") + NoLegend()
+
+DimHeatmap(controls.combined, dims = 1, cells = 500, balanced = TRUE)
+
+DimHeatmap(controls.combined, dims = 1:15, cells = 500, balanced = TRUE)
+
+
+```
+
+
+# Clustering Cells 
+
+```{r}
+#Alzheimers 
+alzheimers.combined <- FindNeighbors(alzheimers.combined, dims = 1:10)
+alzheimers.combined <- FindClusters(alzheimers.combined, resolution = 0.5)
+head(Idents(alzheimers.combined), 5)
+
+#Controls
+controls.combined<- FindNeighbors(controls.combined, dims = 1:10)
+controls.combined <- FindClusters(controls.combined, resolution = 0.5)
+head(Idents(controls.combined), 5)
+```
+
+```{r}
+#Alzheimer 1
+alzheimers.combined <- RunUMAP(alzheimers.combined, dims = 1:10)
+plota <- DimPlot(alzheimers.combined, reduction = "umap")
+
+#Alzheimer 2 
+controls.combined <- RunUMAP(controls.combined, dims = 1:10)
+plotc <- DimPlot(controls.combined, reduction = "umap")
+```
+
+```{r}
+
+  seuset_data <- FindNeighbors(seuset_data, dims = 1:20)
+  seuset_data <- FindClusters(seuset_data, resolution = 0.3)
+  seuset_data <- RunUMAP(seuset_data, reduction = "pca", dims = 1:20)
+  return(seuset_data)
+}
+
+```
+
