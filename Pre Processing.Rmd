@@ -219,13 +219,4 @@ controls.combined <- RunUMAP(controls.combined, dims = 1:10)
 plotc <- DimPlot(controls.combined, reduction = "umap")
 ```
 
-```{r}
-
-  seuset_data <- FindNeighbors(seuset_data, dims = 1:20)
-  seuset_data <- FindClusters(seuset_data, resolution = 0.3)
-  seuset_data <- RunUMAP(seuset_data, reduction = "pca", dims = 1:20)
-  return(seuset_data)
-}
-
-```
 
