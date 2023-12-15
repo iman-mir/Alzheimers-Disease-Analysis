@@ -10,4 +10,4 @@ https://satijalab.org/seurat/articles/pbmc3k_tutorial.html
 
 The repository contains 3 rmd files as the analysis was completed in three stages, stage 1 was the Pre Processing rmd file, stage 2 was the Seurat Cluster Analysis rmd file and stage 3 was the SingleR analysis rmd. 
 
-2 Folders are also part of the repository, output contains all images from the analyses and final images contains all final images used in the submitted report. 
+2 Folders are also part of the repository, output contains all images from the analyses and final report images contains all  images used in the submitted report in the results and appendix sections. 
